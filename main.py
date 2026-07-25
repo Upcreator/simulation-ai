@@ -20,7 +20,8 @@ logger.info(f"PROXY_BASE_URL: {os.getenv('PROXY_BASE_URL')}")
 logger.info(f"DEFAULT_MODEL: {os.getenv('DEFAULT_MODEL')}")
 logger.info(f"LANGFUSE_PUBLIC_KEY: {'задан' if os.getenv('LANGFUSE_PUBLIC_KEY') else 'НЕ ЗАДАН'}")
 logger.info(f"LANGFUSE_SECRET_KEY: {'задан' if os.getenv('LANGFUSE_SECRET_KEY') else 'НЕ ЗАДАН'}")
-logger.info(f"LANGFUSE_BASE_URL: {os.getenv('LANGFUSE_BASE_URL')}")
+# ИЗМЕНЕНО: Проверяем именно LANGFUSE_HOST
+logger.info(f"LANGFUSE_HOST: {os.getenv('LANGFUSE_HOST')}")
 logger.info("=" * 50)
 
 # === Явная инициализация Langfuse ===
@@ -28,7 +29,7 @@ try:
     langfuse = Langfuse(
         public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
         secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
-        host=os.getenv("LANGFUSE_BASE_URL")  # Используем BASE_URL как в документации
+        host=os.getenv("LANGFUSE_HOST")  # ИЗМЕНЕНО: Используем LANGFUSE_HOST (стандарт для Python SDK)
     )
     logger.info("✅ Langfuse успешно инициализирован!")
     
