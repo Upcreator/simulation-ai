@@ -1,18 +1,17 @@
-from dataclasses import dataclass, field
+from pydantic import BaseModel, Field
 
 from src.core.persona import Persona
-from src.core.world import WorldState
-from src.core.memory import MemoryEvent
 from src.core.relation import Relation
+from src.core.memory import MemoryEvent
+from src.core.world import WorldState
 
 
-@dataclass
-class SimulationContext:
+class SimulationContext(BaseModel):
 
-    personas: list[Persona] = field(default_factory=list)
+    personas: list[Persona] = Field(default_factory=list)
 
-    memories: list[MemoryEvent] = field(default_factory=list)
+    relations: list[Relation] = Field(default_factory=list)
 
-    relations: list[Relation] = field(default_factory=list)
+    memories: list[MemoryEvent] = Field(default_factory=list)
 
-    world: WorldState | None = None
+    world: WorldState = Field(default_factory=WorldState)
