@@ -1,8 +1,7 @@
-from dataclasses import dataclass, field
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class MemoryEvent:
+class MemoryEvent(BaseModel):
 
     id: str
 
@@ -10,8 +9,8 @@ class MemoryEvent:
 
     summary: str
 
-    participants: list[str] = field(default_factory=list)
+    participants: list[str] = Field(default_factory=list)
 
-    consequences: list[str] = field(default_factory=list)
+    consequences: list[str] = Field(default_factory=list)
 
-    emotions: list[str] = field(default_factory=list)
+    emotions: list[str] = Field(default_factory=list)
