@@ -1,8 +1,7 @@
-from dataclasses import dataclass, field
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class Persona:
+class Persona(BaseModel):
 
     id: str
 
@@ -10,14 +9,16 @@ class Persona:
 
     role: str
 
-    goals: list[str] = field(default_factory=list)
+    description: str = ""
 
-    fears: list[str] = field(default_factory=list)
+    goals: list[str] = Field(default_factory=list)
 
-    principles: list[str] = field(default_factory=list)
+    fears: list[str] = Field(default_factory=list)
+
+    principles: list[str] = Field(default_factory=list)
 
     communication_style: str = ""
 
     current_emotion: str = "neutral"
 
-    notes: list[str] = field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
