@@ -1,20 +1,14 @@
-from dataclasses import dataclass
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class WorldState:
+class WorldState(BaseModel):
 
-    inflation: float = 0.0
+    inflation: float = 0
 
-    key_rate: float = 0.0
+    key_rate: float = 0
 
-    budget_deficit: float = 0.0
+    budget_deficit: float = 0
 
-    gdp_growth: float = 0.0
+    gdp_growth: float = 0
 
-    news: list[str] = None
-
-    def __post_init__(self):
-
-        if self.news is None:
-            self.news = []
+    news: list[str] = Field(default_factory=list)
