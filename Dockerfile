@@ -10,7 +10,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем исходный код приложения
-COPY main.py .
+COPY app.py .
+COPY src/ ./src/
+COPY characters/ ./characters/
+
+# Папка для sqlite-чекпоинтов LangGraph (история диалогов, резюме).
+# Создаём заранее, чтобы SqliteSaver не падал при первом запуске.
+RUN mkdir -p data
 
 # .env файл лучше не копировать в образ из соображений безопасности,
 # его удобнее передавать при запуске контейнера через флаг --env-file
@@ -21,4 +27,4 @@ COPY main.py .
 EXPOSE 7860
 
 # Запускаем приложение
-CMD ["python", "main.py"]
+CMD ["python", "app.py"]
