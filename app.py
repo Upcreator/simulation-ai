@@ -5,13 +5,6 @@ from langchain_core.messages import HumanMessage
 from src.personas import (
     load_all_personas,
     load_persona,
-    save_persona,import uuid
-import gradio as gr
-from langchain_core.messages import HumanMessage
-
-from src.personas import (
-    load_all_personas,
-    load_persona,
     save_persona,
     delete_persona,
 )
