@@ -6,6 +6,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from src.state import DialogueState
 from src.characters import load_character
 from src.memory_utils import summarize_if_needed
+from src.world import load_world
 from src.config import get_llm, DB_PATH
 
 
@@ -21,7 +22,11 @@ def speak_node(state: DialogueState) -> dict:
     speaker = load_character(f"characters/{_speaker_key(state)}.md")
     partner = load_character(f"characters/{_partner_key(state)}.md")
 
+    world = load_world()
+    world_block = f"### Мир, в котором происходит действие:\n{world}\n\n" if world else ""
+
     system_prompt = (
+        f"{world_block}"
         f"{speaker.system_prompt}\n\n"
         f"Ты сейчас разговариваешь с персонажем по имени {partner.name}. "
         f"Тема разговора: {state['topic']}.\n"

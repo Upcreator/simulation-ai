@@ -6,11 +6,16 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from src.state import ChatState
 from src.characters import load_character
 from src.memory_utils import summarize_if_needed
+from src.world import load_world
 from src.config import get_llm, DB_PATH
 
 
 def _build_system_prompt(character_system_prompt: str, summary: str) -> str:
-    parts = [character_system_prompt]
+    parts = []
+    world = load_world()
+    if world:
+        parts.append("### Мир, в котором происходит действие:\n" + world)
+    parts.append(character_system_prompt)
     if summary:
         parts.append(
             "\n\n### Память о предыдущих разговорах (сжатое резюме):\n" + summary
