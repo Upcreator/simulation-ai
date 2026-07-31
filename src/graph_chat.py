@@ -4,40 +4,35 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from src.state import ChatState
-from src.characters import load_character
-from src.memory_utils import summarize_if_needed
-from src.world import load_world
+from src.personas import load_persona
+from src.prompt_builder import build_system_prompt
+from src.memory import compress_and_append
 from src.config import get_llm, DB_PATH
 
 
-def _build_system_prompt(character_system_prompt: str, summary: str) -> str:
-    parts = []
-    world = load_world()
-    if world:
-        parts.append("### Мир, в котором происходит действие:\n" + world)
-    parts.append(character_system_prompt)
-    if summary:
-        parts.append(
-            "\n\n### Память о предыдущих разговорах (сжатое резюме):\n" + summary
-        )
-    parts.append(
-        "\n\nВажно: оставайся в образе персонажа на протяжении всего диалога "
-        "и опирайся на резюме выше как на свои собственные воспоминания."
-    )
-    return "\n".join(parts)
-
-
 def agent_node(state: ChatState) -> dict:
-    character = load_character(f"characters/{state['character_key']}.md")
-    system_prompt = _build_system_prompt(character.system_prompt, state.get("summary", ""))
+    persona = load_persona(f"personas/{state['persona_key']}.md")
+
+    system_prompt = build_system_prompt(
+        personas=[persona.system_prompt],
+        extra_context=(
+            "Оставайся полностью в образе персонажа выше на протяжении всего "
+            "диалога. Хроника симуляции (если приведена) — это твои "
+            "собственные воспоминания, а не чужой пересказ."
+        ),
+    )
+
     llm = get_llm()
     response = llm.invoke([SystemMessage(content=system_prompt)] + state["messages"])
     return {"messages": [response]}
 
 
 def memory_node(state: ChatState) -> dict:
-    remove_ops, new_summary = summarize_if_needed(state["messages"], state.get("summary", ""))
-    return {"messages": remove_ops, "summary": new_summary}
+    remove_ops = compress_and_append(
+        state["messages"],
+        context_label=f"Личный разговор пользователя с персонажем «{state['persona_key']}»",
+    )
+    return {"messages": remove_ops}
 
 
 def build_chat_graph():
@@ -49,8 +44,9 @@ def build_chat_graph():
     graph.add_edge("agent", "memory")
     graph.add_edge("memory", END)
 
-    # SqliteSaver даёт персистентность между запусками приложения:
-    # история конкретного thread_id (у нас = персонаж) переживает рестарт.
+    # SqliteSaver хранит только короткий "рабочий" хвост сообщений текущей
+    # сессии (per thread_id) — не источник истины для долгосрочной памяти,
+    # той самой, что описана в документе. Источник истины — memory/history.md.
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     checkpointer = SqliteSaver(conn)
 

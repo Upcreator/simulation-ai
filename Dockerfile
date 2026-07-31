@@ -12,11 +12,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем исходный код приложения
 COPY app.py .
 COPY src/ ./src/
-COPY characters/ ./characters/
 
-# Папка для sqlite-чекпоинтов LangGraph (история диалогов, резюме).
-# Создаём заранее, чтобы SqliteSaver не падал при первом запуске.
-RUN mkdir -p data
+# Копируем дефолтные данные симуляции (можно переопределить volume-ами при запуске)
+COPY personas/ ./personas/
+COPY skills/ ./skills/
+
+# memory/ и data/ — постоянно изменяемые в рантайме (хроника, sqlite-кэш),
+# создаём заранее, чтобы приложение не падало при первом запуске
+RUN mkdir -p memory data
 
 # .env файл лучше не копировать в образ из соображений безопасности,
 # его удобнее передавать при запуске контейнера через флаг --env-file

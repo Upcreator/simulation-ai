@@ -4,38 +4,36 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
 
 from src.state import DialogueState
-from src.characters import load_character
-from src.memory_utils import summarize_if_needed
-from src.world import load_world
+from src.personas import load_persona
+from src.prompt_builder import build_system_prompt
+from src.memory import compress_and_append
 from src.config import get_llm, DB_PATH
 
 
 def _speaker_key(state: DialogueState) -> str:
-    return state["char_a_key"] if state["current_speaker"] == "a" else state["char_b_key"]
+    return state["persona_a_key"] if state["current_speaker"] == "a" else state["persona_b_key"]
 
 
 def _partner_key(state: DialogueState) -> str:
-    return state["char_b_key"] if state["current_speaker"] == "a" else state["char_a_key"]
+    return state["persona_b_key"] if state["current_speaker"] == "a" else state["persona_a_key"]
 
 
 def speak_node(state: DialogueState) -> dict:
-    speaker = load_character(f"characters/{_speaker_key(state)}.md")
-    partner = load_character(f"characters/{_partner_key(state)}.md")
+    speaker = load_persona(f"personas/{_speaker_key(state)}.md")
+    partner = load_persona(f"personas/{_partner_key(state)}.md")
 
-    world = load_world()
-    world_block = f"### Мир, в котором происходит действие:\n{world}\n\n" if world else ""
-
-    system_prompt = (
-        f"{world_block}"
-        f"{speaker.system_prompt}\n\n"
-        f"Ты сейчас разговариваешь с персонажем по имени {partner.name}. "
+    extra_context = (
+        f"Ты играешь роль персонажа «{speaker.name}» (первая карточка ниже). "
+        f"«{partner.name}» — твой собеседник в этой сцене, его карточка "
+        f"приведена только для контекста — не отвечай и не говори за него.\n"
         f"Тема разговора: {state['topic']}.\n"
+        "Отвечай только своей репликой, без указания своего имени в начале, "
+        "кратко и живо, как в настоящем диалоге. Не повторяй уже сказанное."
     )
-    if state.get("summary"):
-        system_prompt += f"\nРанее в разговоре произошло (резюме):\n{state['summary']}\n"
-    system_prompt += (
-        "\nОтвечай только своей репликой, без указания своего имени в начале, "
-        "кратко и живо, как в настоящем диалоге. Не повторяй то, что уже сказано."
+
+    system_prompt = build_system_prompt(
+        personas=[speaker.system_prompt, partner.system_prompt],
+        extra_context=extra_context,
     )
 
     llm = get_llm()
@@ -52,8 +50,12 @@ def speak_node(state: DialogueState) -> dict:
 
 
 def memory_node(state: DialogueState) -> dict:
-    remove_ops, new_summary = summarize_if_needed(state["messages"], state.get("summary", ""))
-    return {"messages": remove_ops, "summary": new_summary}
+    label = (
+        f"Диалог персонажей «{state['persona_a_key']}» и «{state['persona_b_key']}» "
+        f"на тему «{state['topic']}»"
+    )
+    remove_ops = compress_and_append(state["messages"], context_label=label)
+    return {"messages": remove_ops}
 
 
 def _route_after_memory(state: DialogueState):
